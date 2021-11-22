@@ -93,18 +93,31 @@ class Py3CW(IPy3CW):
         """
         absolute_url = f"{API_URL}{relative_url}"
 
+        headers = {
+            'APIKEY': self.key,
+            'Signature': signature,
+            **additional_headers
+        }
+        meta = {
+            'request_method': http_method,
+            'request_url': absolute_url,
+            'request_headers': headers,
+            'request_payload': payload,
+            'response_headers' : None,
+            'response_code' : None,
+            'duration_microsec' : None
+        }
         try:
             response = self.session.request(
                 method=http_method,
                 url=absolute_url,
-                headers={
-                    'APIKEY': self.key,
-                    'Signature': signature,
-                    **additional_headers
-                },
+                headers=headers,
                 json=payload,
                 timeout=(self.request_timeout, self.request_timeout)
             )
+            meta['response_headers'] = response.headers
+            meta['response_code'] = response.status_code
+            meta['duration_microsec'] = response.elapsed.microseconds
 
             response_json = json.loads(response.text)
 
@@ -123,24 +136,24 @@ class Py3CW(IPy3CW):
                         retry_count=retry_count + 1
                     )
                 else:
-                    return response_json, {}
+                    return response_json, meta,{}
             else:
-                return {}, response_json
+                return {}, meta, response_json
 
         except HTTPError as http_err:
-            return {'error': True, 'msg': 'HTTP error occurred: {0}'.format(http_err)}, None
+            return {'error': True, 'msg': 'HTTP error occurred: {0}'.format(http_err)}, meta, None
 
         except Exception as generic_exc:
             if not 'response_json' in locals():
                 return {
                     'error': True,
                     'msg': 'Other error occurred: {}'.format(generic_exc.args[0])
-                }, None
+                }, meta, None
             return {'error': True, 'msg': 'Other error occurred: {} {} {}.'.format(
                 response_json.get('error'),
                 response_json.get('error_description'),
                 response_json.get('error_attributes')
-            )}, None
+            )}, meta, None
 
     @verify_request
     def request(self, entity: str, action: str = '', action_id: str = None, action_sub_id: str = None,
