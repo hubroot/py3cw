@@ -78,6 +78,16 @@ class Py3CW(IPy3CW):
         if params is not None and len(params) > 0:
             relative_url = relative_url + f"?{params}"
 
+        meta = {
+            'request_method': http_method,
+            'request_url': None,
+            'request_headers': None,
+            'request_payload': payload,
+            'response_headers' : None,
+            'response_code' : None,
+            'duration_microsec' : None
+        }
+
         """
         Make sure the payload is None if the method is GET or when in fact
         we have no payload.
@@ -93,20 +103,16 @@ class Py3CW(IPy3CW):
         """
         absolute_url = f"{API_URL}{relative_url}"
 
+        meta['request_url'] = absolute_url
+
         headers = {
             'APIKEY': self.key,
             'Signature': signature,
             **additional_headers
         }
-        meta = {
-            'request_method': http_method,
-            'request_url': absolute_url,
-            'request_headers': headers,
-            'request_payload': payload,
-            'response_headers' : None,
-            'response_code' : None,
-            'duration_microsec' : None
-        }
+
+        meta['request_headers'] = headers
+        
         try:
             response = self.session.request(
                 method=http_method,
