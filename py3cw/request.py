@@ -85,6 +85,7 @@ class Py3CW(IPy3CW):
             'request_payload': payload,
             'response_headers' : None,
             'response_code' : None,
+            'response_text' : None,
             'duration_microsec' : None
         }
 
@@ -123,6 +124,7 @@ class Py3CW(IPy3CW):
             )
             meta['response_headers'] = response.headers
             meta['response_code'] = response.status_code
+            meta['response_text'] = response.text
             meta['duration_microsec'] = response.elapsed.microseconds
 
             response_json = json.loads(response.text)
